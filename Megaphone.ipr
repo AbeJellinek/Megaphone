@@ -86,6 +86,9 @@
       </set>
     </option>
   </component>
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+  </component>
   <component name="libraryTable">
     <library name="appcompat-v7-23.1.0">
       <ANNOTATIONS>

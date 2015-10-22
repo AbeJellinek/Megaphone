@@ -1,6 +1,9 @@
 package im.abe.megaphone.app;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -9,6 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import com.github.clans.fab.FloatingActionButton;
 
 public class MainActivity extends AppCompatActivity {
@@ -65,14 +69,26 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class MessageAdapter extends RecyclerView.Adapter {
+    private class MessageAdapter extends RecyclerView.Adapter<ViewHolder> {
         @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             return new ViewHolder(getLayoutInflater().inflate(R.layout.message_card, parent, false));
         }
 
         @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        public void onBindViewHolder(final ViewHolder holder, final int position) {
+            holder.message.setText("Position " + position);
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    ActivityOptionsCompat options =
+                            ActivityOptionsCompat.makeSceneTransitionAnimation(
+                                    MainActivity.this, holder.itemView, MessageActivity.EXTRA_MESSAGE);
+                    Intent intent = new Intent(MainActivity.this, MessageActivity.class);
+                    intent.putExtra(MessageActivity.EXTRA_MESSAGE, String.valueOf(position));
+                    ActivityCompat.startActivity(MainActivity.this, intent, options.toBundle());
+                }
+            });
         }
 
         @Override
@@ -82,8 +98,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class ViewHolder extends RecyclerView.ViewHolder {
+        private TextView message;
+
         public ViewHolder(View itemView) {
             super(itemView);
+            message = (TextView) itemView.findViewById(R.id.message_text);
         }
     }
 }
