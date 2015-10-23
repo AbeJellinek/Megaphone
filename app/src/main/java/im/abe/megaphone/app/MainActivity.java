@@ -1,11 +1,16 @@
 package im.abe.megaphone.app;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcEvent;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -18,6 +23,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
 import io.realm.Realm;
 
 import java.nio.charset.Charset;
@@ -26,9 +32,10 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements NfcAdapter.CreateNdefMessageCallback {
 
-    private Realm realm;
-
+    private static final int SELECT_PHOTO = 100;
     private final int scrollOffset = 4;
+
+    private Realm realm;
     private RecyclerView recyclerView;
     private List<Message> messages;
     private MessageAdapter adapter;
@@ -43,7 +50,9 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
         realm = Realm.getInstance(this);
         messages = realm.allObjectsSorted(Message.class, "date", false);
 
-        final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        final FloatingActionMenu fam = (FloatingActionMenu) findViewById(R.id.fam);
+        FloatingActionButton textFab = (FloatingActionButton) findViewById(R.id.add_text_fab);
+        FloatingActionButton imageFab = (FloatingActionButton) findViewById(R.id.add_image_fab);
         recyclerView = (RecyclerView) findViewById(R.id.main_list);
         adapter = new MessageAdapter();
         recyclerView.setHasFixedSize(true);
@@ -56,15 +65,15 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
                 super.onScrolled(recyclerView, dx, dy);
                 if (Math.abs(dy) > scrollOffset) {
                     if (dy > 0) {
-                        fab.hide(true);
+                        fam.hideMenuButton(true);
                     } else {
-                        fab.show(true);
+                        fam.showMenuButton(true);
                     }
                 }
             }
         });
 
-        fab.setOnClickListener(new View.OnClickListener() {
+        textFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, MessageEditActivity.class);
@@ -72,9 +81,42 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
             }
         });
 
+        imageFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+                photoPickerIntent.setType("image/*");
+                startActivityForResult(photoPickerIntent, SELECT_PHOTO);
+            }
+        });
+
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         if (nfcAdapter != null) {
             nfcAdapter.setNdefPushMessageCallback(this, this);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    Intent imageReturnedIntent) {
+        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+
+        switch (requestCode) {
+            case SELECT_PHOTO:
+                if (resultCode == RESULT_OK) {
+                    Uri selectedImage = imageReturnedIntent.getData();
+                    String[] filePathColumn = {MediaStore.Images.Media.DATA};
+
+                    Cursor cursor = getContentResolver().query(
+                            selectedImage, filePathColumn, null, null, null);
+                    cursor.moveToFirst();
+
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    String filePath = cursor.getString(columnIndex);
+                    cursor.close();
+
+                    Bitmap yourSelectedImage = BitmapFactory.decodeFile(filePath);
+                }
         }
     }
 
@@ -115,11 +157,10 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
     @Override
     public NdefMessage createNdefMessage(NfcEvent event) {
         String text = ("This is a test: " + System.currentTimeMillis());
-        NdefMessage msg = new NdefMessage(
+        return new NdefMessage(
                 new NdefRecord[]{createMime(
                         "text/plain", text.getBytes())
                 });
-        return msg;
     }
 
     public static String normalizeMimeType(String type) {
