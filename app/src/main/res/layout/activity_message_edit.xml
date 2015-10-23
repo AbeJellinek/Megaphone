@@ -4,7 +4,7 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".MessageActivity">
+        tools:context=".MessageEditActivity">
 
     <LinearLayout android:layout_width="match_parent"
                   android:layout_height="match_parent"
@@ -40,21 +40,22 @@
                         android:layout_height="match_parent"
                         android:orientation="vertical">
 
-                    <TextView android:id="@+id/message_title"
+                    <EditText android:id="@+id/message_title"
                               android:textSize="24sp"
                               android:textColor="@android:color/black"
-                              android:layout_width="wrap_content"
+                              android:layout_width="match_parent"
                               android:layout_height="wrap_content"
-                              android:paddingBottom="16dp"/>
+                              android:paddingBottom="16dp"
+                              android:singleLine="true"
+                              android:inputType="textCapSentences|textAutoCorrect"/>
 
                     <ScrollView android:layout_width="match_parent"
                                 android:layout_height="match_parent">
 
-                        <TextView android:id="@+id/message_text"
-                                  android:textSize="14sp"
-                                  android:layout_width="wrap_content"
-                                  android:layout_height="wrap_content"
-                                  android:textIsSelectable="true"/>
+                        <EditText android:id="@+id/message_text"
+                                  android:textSize="18sp"
+                                  android:layout_width="match_parent"
+                                  android:layout_height="wrap_content"/>
 
                     </ScrollView>
 

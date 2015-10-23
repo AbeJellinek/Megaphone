@@ -24,6 +24,14 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="im.abe.megaphone.app.MainActivity" />
         </activity>
+        <activity
+            android:name=".MessageEditActivity"
+            android:label="@string/title_activity_message_edit"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="im.abe.megaphone.app.MainActivity" />
+        </activity>
     </application>
 
 </manifest>

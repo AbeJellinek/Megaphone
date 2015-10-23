@@ -56,6 +56,14 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, MessageEditActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -78,6 +86,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        adapter.notifyDataSetChanged();
     }
 
     @Override
