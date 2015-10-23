@@ -47,8 +47,14 @@ public class MessageActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == android.R.id.home) {
+        if (id == R.id.action_delete) {
+            realm.beginTransaction();
+            message.removeFromRealm();
+            realm.commitTransaction();
+
+            finish();
+            return true;
+        } else if (id == android.R.id.home) {
             ActivityCompat.finishAfterTransition(this);
             return true;
         }

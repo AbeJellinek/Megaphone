@@ -1,6 +1,10 @@
 package im.abe.megaphone.app;
 
 import android.content.Intent;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcEvent;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -16,9 +20,11 @@ import android.widget.TextView;
 import com.github.clans.fab.FloatingActionButton;
 import io.realm.Realm;
 
+import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NfcAdapter.CreateNdefMessageCallback {
 
     private Realm realm;
 
@@ -26,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private List<Message> messages;
     private MessageAdapter adapter;
+    private NfcAdapter nfcAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +71,11 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (nfcAdapter != null) {
+            nfcAdapter.setNdefPushMessageCallback(this, this);
+        }
     }
 
     @Override
@@ -98,6 +110,50 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         realm.close();
+    }
+
+    @Override
+    public NdefMessage createNdefMessage(NfcEvent event) {
+        String text = ("This is a test: " + System.currentTimeMillis());
+        NdefMessage msg = new NdefMessage(
+                new NdefRecord[]{createMime(
+                        "text/plain", text.getBytes())
+                });
+        return msg;
+    }
+
+    public static String normalizeMimeType(String type) {
+        if (type == null) {
+            return null;
+        }
+
+        type = type.trim().toLowerCase(Locale.ROOT);
+
+        final int semicolonIndex = type.indexOf(';');
+        if (semicolonIndex != -1) {
+            type = type.substring(0, semicolonIndex);
+        }
+        return type;
+    }
+
+    public static NdefRecord createMime(String mimeType, byte[] mimeData) {
+        if (mimeType == null) throw new NullPointerException("mimeType is null");
+
+        // We only do basic MIME type validation: trying to follow the
+        // RFCs strictly only ends in tears, since there are lots of MIME
+        // types in common use that are not strictly valid as per RFC rules
+        mimeType = normalizeMimeType(mimeType);
+        if (mimeType.length() == 0) throw new IllegalArgumentException("mimeType is empty");
+        int slashIndex = mimeType.indexOf('/');
+        if (slashIndex == 0) throw new IllegalArgumentException("mimeType must have major type");
+        if (slashIndex == mimeType.length() - 1) {
+            throw new IllegalArgumentException("mimeType must have minor type");
+        }
+        // missing '/' is allowed
+
+        // MIME RFCs suggest ASCII encoding for content-type
+        byte[] typeBytes = mimeType.getBytes(Charset.forName("US-ASCII"));
+        return new NdefRecord(NdefRecord.TNF_MIME_MEDIA, typeBytes, null, mimeData);
     }
 
     private class MessageAdapter extends RecyclerView.Adapter<ViewHolder> {
