@@ -14,11 +14,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import com.github.clans.fab.FloatingActionButton;
+import io.realm.Realm;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    private Realm realm;
+
     private final int scrollOffset = 4;
     private RecyclerView recyclerView;
+    private List<Message> messages;
+    private MessageAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,11 +33,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
 
+        realm = Realm.getInstance(this);
+        messages = realm.allObjectsSorted(Message.class, "date", false);
+
         final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         recyclerView = (RecyclerView) findViewById(R.id.main_list);
+        adapter = new MessageAdapter();
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(new MessageAdapter());
+        recyclerView.setAdapter(adapter);
 
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -69,6 +80,12 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        realm.close();
+    }
+
     private class MessageAdapter extends RecyclerView.Adapter<ViewHolder> {
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -77,7 +94,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(final ViewHolder holder, final int position) {
-            holder.message.setText("Position " + position);
+            final Message message = messages.get(position);
+            holder.title.setText(message.getTitle());
+            holder.text.setText(message.getText());
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -85,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
                             ActivityOptionsCompat.makeSceneTransitionAnimation(
                                     MainActivity.this, holder.itemView, MessageActivity.EXTRA_MESSAGE);
                     Intent intent = new Intent(MainActivity.this, MessageActivity.class);
-                    intent.putExtra(MessageActivity.EXTRA_MESSAGE, String.valueOf(position));
+                    intent.putExtra(MessageActivity.EXTRA_MESSAGE, message.getId());
                     ActivityCompat.startActivity(MainActivity.this, intent, options.toBundle());
                 }
             });
@@ -93,16 +112,18 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return 6;
+            return messages.size();
         }
     }
 
     private class ViewHolder extends RecyclerView.ViewHolder {
-        private TextView message;
+        private TextView title;
+        private TextView text;
 
         public ViewHolder(View itemView) {
             super(itemView);
-            message = (TextView) itemView.findViewById(R.id.message_text);
+            title = (TextView) itemView.findViewById(R.id.message_title);
+            text = (TextView) itemView.findViewById(R.id.message_text);
         }
     }
 }

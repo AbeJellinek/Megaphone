@@ -8,10 +8,14 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import io.realm.Realm;
 
 public class MessageActivity extends AppCompatActivity {
 
     public static final String EXTRA_MESSAGE = "MessageActivity:message";
+
+    private Realm realm;
+    private Message message;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,8 +24,13 @@ public class MessageActivity extends AppCompatActivity {
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        realm = Realm.getInstance(this);
+        message = realm.where(Message.class).equalTo("id", getIntent().getStringExtra(EXTRA_MESSAGE)).findFirst();
+
         ViewCompat.setTransitionName(findViewById(R.id.card), EXTRA_MESSAGE);
-        ((TextView) findViewById(R.id.message_text)).setText("Position " + getIntent().getStringExtra(EXTRA_MESSAGE));
+
+        ((TextView) findViewById(R.id.message_title)).setText(message.getTitle());
+        ((TextView) findViewById(R.id.message_text)).setText(message.getText());
     }
 
     @Override
