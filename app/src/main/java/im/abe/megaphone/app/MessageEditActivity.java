@@ -25,7 +25,7 @@ public class MessageEditActivity extends BaseActivity {
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        realm = Realm.getInstance(this);
+        realm = Realm.getDefaultInstance();
     }
 
     @Override

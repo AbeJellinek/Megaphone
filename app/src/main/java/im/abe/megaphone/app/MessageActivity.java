@@ -26,7 +26,7 @@ public class MessageActivity extends BaseActivity {
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        realm = Realm.getInstance(this);
+        realm = Realm.getDefaultInstance();
         message = realm.where(Message.class).equalTo("id", getIntent().getStringExtra(EXTRA_MESSAGE)).findFirst();
 
         ViewCompat.setTransitionName(findViewById(R.id.card), EXTRA_MESSAGE);
@@ -62,5 +62,11 @@ public class MessageActivity extends BaseActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        realm.close();
     }
 }

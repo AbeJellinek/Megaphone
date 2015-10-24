@@ -49,7 +49,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        realm = Realm.getInstance(this);
+        realm = Realm.getDefaultInstance();
         messages = realm.allObjectsSorted(Message.class, "date", false);
 
         final FloatingActionMenu fam = (FloatingActionMenu) findViewById(R.id.fam);
@@ -149,13 +149,12 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_lock) {
+            Realm.removeDefaultConfiguration();
+            finish();
+            startActivity(new Intent(this, LoginRegisterActivity.class));
             return true;
         }
 
