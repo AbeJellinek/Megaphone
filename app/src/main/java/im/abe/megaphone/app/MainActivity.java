@@ -118,6 +118,11 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                     cursor.moveToFirst();
 
                     int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    if (cursor.isAfterLast()) {
+                        cursor.close();
+                        break;
+                    }
+
                     String filePath = cursor.getString(columnIndex);
                     cursor.close();
 
@@ -273,6 +278,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                 Picasso.with(MainActivity.this)
                         .load(new File(message.getText()))
                         .resize(1080, 0)
+                        .onlyScaleDown()
                         .into(imageHolder.image);
 
                 holder.itemView.setOnClickListener(new View.OnClickListener() {
