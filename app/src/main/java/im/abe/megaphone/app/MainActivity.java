@@ -11,10 +11,8 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,7 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements NfcAdapter.CreateNdefMessageCallback {
+public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefMessageCallback {
 
     private static final int SELECT_PHOTO = 100;
     private final int scrollOffset = 4;
@@ -45,10 +43,13 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
     private NfcAdapter nfcAdapter;
 
     @Override
+    protected int getMainView() {
+        return R.layout.activity_main;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
 
         realm = Realm.getInstance(this);
         messages = realm.allObjectsSorted(Message.class, "date", false);

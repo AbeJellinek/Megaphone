@@ -3,14 +3,12 @@ package im.abe.megaphone.app;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 import io.realm.Realm;
 
-public class MessageActivity extends AppCompatActivity {
+public class MessageActivity extends BaseActivity {
 
     public static final String EXTRA_MESSAGE = "MessageActivity:message";
 
@@ -18,10 +16,14 @@ public class MessageActivity extends AppCompatActivity {
     private Message message;
 
     @Override
+    protected int getMainView() {
+        return R.layout.activity_message;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_message);
-        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         realm = Realm.getInstance(this);

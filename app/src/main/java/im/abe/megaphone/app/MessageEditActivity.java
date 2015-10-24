@@ -2,8 +2,6 @@ package im.abe.megaphone.app;
 
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -12,15 +10,19 @@ import io.realm.Realm;
 import java.util.Date;
 import java.util.UUID;
 
-public class MessageEditActivity extends AppCompatActivity {
+public class MessageEditActivity extends BaseActivity {
 
     private Realm realm;
 
     @Override
+    protected int getMainView() {
+        return R.layout.activity_message_edit;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_message_edit);
-        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         realm = Realm.getInstance(this);
