@@ -2,8 +2,6 @@ package im.abe.megaphone.app;
 
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
@@ -21,14 +19,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
+import com.squareup.picasso.Picasso;
 import io.realm.Realm;
 
+import java.io.File;
 import java.nio.charset.Charset;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements NfcAdapter.CreateNdefMessageCallback {
 
@@ -115,7 +118,16 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
                     String filePath = cursor.getString(columnIndex);
                     cursor.close();
 
-                    Bitmap yourSelectedImage = BitmapFactory.decodeFile(filePath);
+                    realm.beginTransaction();
+
+                    Message message = realm.createObject(Message.class);
+                    message.setId(UUID.randomUUID().toString());
+                    message.setDate(new Date());
+                    message.setTitle("Image");
+                    message.setText(filePath);
+                    message.setImage(true);
+
+                    realm.commitTransaction();
                 }
         }
     }
@@ -197,44 +209,86 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
         return new NdefRecord(NdefRecord.TNF_MIME_MEDIA, typeBytes, null, mimeData);
     }
 
-    private class MessageAdapter extends RecyclerView.Adapter<ViewHolder> {
+    private class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            return new ViewHolder(getLayoutInflater().inflate(R.layout.message_card, parent, false));
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            switch (viewType) {
+                case 0:
+                    return new TextViewHolder(getLayoutInflater().inflate(R.layout.message_card, parent, false));
+                case 1:
+                    return new ImageViewHolder(getLayoutInflater().inflate(R.layout.message_card_image, parent, false));
+                default:
+                    throw new IllegalArgumentException();
+            }
         }
 
         @Override
-        public void onBindViewHolder(final ViewHolder holder, final int position) {
+        public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
             final Message message = messages.get(position);
-            holder.title.setText(message.getTitle());
-            holder.text.setText(message.getText());
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    ActivityOptionsCompat options =
-                            ActivityOptionsCompat.makeSceneTransitionAnimation(
-                                    MainActivity.this, holder.itemView, MessageActivity.EXTRA_MESSAGE);
-                    Intent intent = new Intent(MainActivity.this, MessageActivity.class);
-                    intent.putExtra(MessageActivity.EXTRA_MESSAGE, message.getId());
-                    ActivityCompat.startActivity(MainActivity.this, intent, options.toBundle());
-                }
-            });
+
+            if (holder instanceof TextViewHolder) {
+                TextViewHolder textHolder = (TextViewHolder) holder;
+                textHolder.title.setText(message.getTitle());
+                textHolder.text.setText(message.getText());
+
+                holder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        ActivityOptionsCompat options =
+                                ActivityOptionsCompat.makeSceneTransitionAnimation(
+                                        MainActivity.this, holder.itemView, MessageActivity.EXTRA_MESSAGE);
+                        Intent intent = new Intent(MainActivity.this, MessageActivity.class);
+                        intent.putExtra(MessageActivity.EXTRA_MESSAGE, message.getId());
+                        ActivityCompat.startActivity(MainActivity.this, intent, options.toBundle());
+                    }
+                });
+            } else if (holder instanceof ImageViewHolder) {
+                final ImageViewHolder imageHolder = (ImageViewHolder) holder;
+                Picasso.with(MainActivity.this)
+                        .load(new File(message.getText()))
+                        .resize(1080, 0)
+                        .into(imageHolder.image);
+
+                holder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent();
+                        intent.setAction(Intent.ACTION_VIEW);
+                        intent.setDataAndType(Uri.parse("file://" + message.getText()), "image/*");
+                        startActivity(intent);
+                    }
+                });
+            }
         }
 
         @Override
         public int getItemCount() {
             return messages.size();
         }
+
+        @Override
+        public int getItemViewType(int position) {
+            return messages.get(position).isImage() ? 1 : 0;
+        }
     }
 
-    private class ViewHolder extends RecyclerView.ViewHolder {
+    private class TextViewHolder extends RecyclerView.ViewHolder {
         private TextView title;
         private TextView text;
 
-        public ViewHolder(View itemView) {
+        public TextViewHolder(View itemView) {
             super(itemView);
             title = (TextView) itemView.findViewById(R.id.message_title);
             text = (TextView) itemView.findViewById(R.id.message_text);
+        }
+    }
+
+    private class ImageViewHolder extends RecyclerView.ViewHolder {
+        private ImageView image;
+
+        public ImageViewHolder(View itemView) {
+            super(itemView);
+            image = (ImageView) itemView.findViewById(R.id.message_image);
         }
     }
 }

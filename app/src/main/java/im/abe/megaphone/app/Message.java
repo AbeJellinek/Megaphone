@@ -11,6 +11,7 @@ public class Message extends RealmObject {
     private Date date;
     private String title;
     private String text;
+    private boolean image;
 
     public String getId() {
         return id;
@@ -42,5 +43,13 @@ public class Message extends RealmObject {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public boolean isImage() {
+        return image;
+    }
+
+    public void setImage(boolean image) {
+        this.image = image;
     }
 }
