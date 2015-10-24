@@ -68,9 +68,9 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
                 super.onScrolled(recyclerView, dx, dy);
                 if (Math.abs(dy) > scrollOffset) {
                     if (dy > 0) {
-                        fam.hideMenuButton(true);
+                        fam.hideMenu(true);
                     } else {
-                        fam.showMenuButton(true);
+                        fam.showMenu(true);
                     }
                 }
             }
@@ -79,6 +79,8 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
         textFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                fam.close(false);
+
                 Intent intent = new Intent(MainActivity.this, MessageEditActivity.class);
                 startActivity(intent);
             }
@@ -87,6 +89,8 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Create
         imageFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                fam.close(false);
+
                 Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
                 photoPickerIntent.setType("image/*");
                 startActivityForResult(photoPickerIntent, SELECT_PHOTO);
