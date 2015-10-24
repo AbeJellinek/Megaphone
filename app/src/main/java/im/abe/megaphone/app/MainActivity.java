@@ -13,10 +13,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
+import android.text.format.DateUtils;
+import android.view.*;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.github.clans.fab.FloatingActionButton;
@@ -230,6 +228,29 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
         @Override
         public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
             final Message message = messages.get(position);
+
+            holder.itemView.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
+                @Override
+                public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+                    MenuInflater inflater = getMenuInflater();
+                    inflater.inflate(R.menu.menu_message_context, menu);
+                    MenuItem item = menu.findItem(R.id.info_time);
+                    item.setTitle(String.format(String.valueOf(item.getTitle()),
+                            DateUtils.getRelativeTimeSpanString(message.getDate().getTime())));
+
+                    menu.findItem(R.id.action_delete).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                        @Override
+                        public boolean onMenuItemClick(MenuItem item) {
+                            realm.beginTransaction();
+                            messages.remove(position);
+                            notifyItemRemoved(position);
+                            realm.commitTransaction();
+
+                            return true;
+                        }
+                    });
+                }
+            });
 
             if (holder instanceof TextViewHolder) {
                 TextViewHolder textHolder = (TextViewHolder) holder;

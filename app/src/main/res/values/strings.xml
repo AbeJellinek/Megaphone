@@ -7,4 +7,5 @@
     <string name="title_activity_message_edit">Edit Message</string>
     <string name="done">Done</string>
     <string name="delete">Delete</string>
+    <string name="created_template">Created %s</string>
 </resources>
