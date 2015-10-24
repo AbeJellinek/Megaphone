@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <CheckBoxPreference
+            android:key="pref_tap_to_sync"
+            android:title="@string/pref_tap_to_sync"
+            android:summary="@string/pref_tap_to_sync_summ"
+            android:defaultValue="true"/>
+
+</PreferenceScreen>

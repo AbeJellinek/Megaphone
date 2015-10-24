@@ -8,6 +8,7 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcEvent;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -97,7 +98,8 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
         });
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        if (nfcAdapter != null) {
+        if (nfcAdapter != null && PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean("pref_tap_to_sync", true)) {
             nfcAdapter.setNdefPushMessageCallback(this, this);
         }
     }
@@ -156,6 +158,8 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
             finish();
             startActivity(new Intent(this, LoginRegisterActivity.class));
             return true;
+        } else if (id == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
         }
 
         return super.onOptionsItemSelected(item);

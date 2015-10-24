@@ -19,4 +19,6 @@
     <string name="enter_password">Enter Password</string>
     <string name="choose_password">Choose Password</string>
     <string name="lock">Lock</string>
+    <string name="pref_tap_to_sync">Tap to Sync</string>
+    <string name="pref_tap_to_sync_summ">Tap two phones together to sync messages</string>
 </resources>

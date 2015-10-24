@@ -14,8 +14,10 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(getMainView());
-        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+        if (getMainView() != -1) {
+            setContentView(getMainView());
+            setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Transition fade = new Fade();
