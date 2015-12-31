@@ -22,11 +22,13 @@ import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
 import com.squareup.picasso.Picasso;
 import io.realm.Realm;
+import io.realm.RealmChangeListener;
+import io.realm.RealmConfiguration;
+import io.realm.RealmResults;
 
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -37,7 +39,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
 
     private Realm realm;
     private RecyclerView recyclerView;
-    private List<Message> messages;
+    private RealmResults<Message> messages;
     private MessageAdapter adapter;
     private NfcAdapter nfcAdapter;
 
@@ -50,8 +52,10 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Realm.setDefaultConfiguration(new RealmConfiguration.Builder(this).build());
+
         realm = Realm.getDefaultInstance();
-        messages = realm.allObjectsSorted(Message.class, "date", false);
+        messages = realm.where(Message.class).findAllSortedAsync("date", false);
 
         initUI();
         initNFC();
@@ -109,6 +113,13 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                 startActivityForResult(photoPickerIntent, SELECT_PHOTO);
             }
         });
+
+        messages.addChangeListener(new RealmChangeListener() {
+            @Override
+            public void onChange() {
+                adapter.notifyDataSetChanged();
+            }
+        });
     }
 
     @Override
@@ -160,12 +171,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_lock) {
-            Realm.removeDefaultConfiguration();
-            finish();
-            startActivity(new Intent(this, LoginRegisterActivity.class));
-            return true;
-        } else if (id == R.id.action_settings) {
+        if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
         }
 
@@ -228,6 +234,29 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
     }
 
     private class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        public MessageAdapter() {
+            registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+                @Override
+                public void onChanged() {
+                    if (getItemCount() == 0) {
+                        findViewById(R.id.empty_view).setVisibility(View.VISIBLE);
+                    } else {
+                        findViewById(R.id.empty_view).setVisibility(View.GONE);
+                    }
+                }
+
+                @Override
+                public void onItemRangeInserted(int positionStart, int itemCount) {
+                    onChanged();
+                }
+
+                @Override
+                public void onItemRangeRemoved(int positionStart, int itemCount) {
+                    onChanged();
+                }
+            });
+        }
+
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             switch (viewType) {
@@ -267,39 +296,8 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                 }
             });
 
-            if (holder instanceof TextViewHolder) {
-                TextViewHolder textHolder = (TextViewHolder) holder;
-                textHolder.title.setText(message.getTitle());
-                textHolder.text.setText(message.getText());
-
-                holder.itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        ActivityOptionsCompat options =
-                                ActivityOptionsCompat.makeSceneTransitionAnimation(
-                                        MainActivity.this, holder.itemView, MessageActivity.EXTRA_MESSAGE);
-                        Intent intent = new Intent(MainActivity.this, MessageActivity.class);
-                        intent.putExtra(MessageActivity.EXTRA_MESSAGE, message.getId());
-                        ActivityCompat.startActivity(MainActivity.this, intent, options.toBundle());
-                    }
-                });
-            } else if (holder instanceof ImageViewHolder) {
-                final ImageViewHolder imageHolder = (ImageViewHolder) holder;
-                Picasso.with(MainActivity.this)
-                        .load(new File(message.getText()))
-                        .resize(1080, 0)
-                        .onlyScaleDown()
-                        .into(imageHolder.image);
-
-                holder.itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent intent = new Intent();
-                        intent.setAction(Intent.ACTION_VIEW);
-                        intent.setDataAndType(Uri.parse("file://" + message.getText()), "image/*");
-                        startActivity(intent);
-                    }
-                });
+            if (holder instanceof MessageViewHolder) {
+                ((MessageViewHolder) holder).init(position, message);
             }
         }
 
@@ -314,7 +312,15 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
         }
     }
 
-    private class TextViewHolder extends RecyclerView.ViewHolder {
+    private abstract class MessageViewHolder extends RecyclerView.ViewHolder {
+        protected MessageViewHolder(View itemView) {
+            super(itemView);
+        }
+
+        public abstract void init(int position, Message message);
+    }
+
+    private class TextViewHolder extends MessageViewHolder {
         private TextView title;
         private TextView text;
 
@@ -323,14 +329,51 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
             title = (TextView) itemView.findViewById(R.id.message_title);
             text = (TextView) itemView.findViewById(R.id.message_text);
         }
+
+        @Override
+        public void init(int position, final Message message) {
+            title.setText(message.getTitle());
+            text.setText(message.getText());
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    ActivityOptionsCompat options =
+                            ActivityOptionsCompat.makeSceneTransitionAnimation(
+                                    MainActivity.this, itemView, MessageActivity.EXTRA_MESSAGE);
+                    Intent intent = new Intent(MainActivity.this, MessageActivity.class);
+                    intent.putExtra(MessageActivity.EXTRA_MESSAGE, message.getId());
+                    ActivityCompat.startActivity(MainActivity.this, intent, options.toBundle());
+                }
+            });
+        }
     }
 
-    private class ImageViewHolder extends RecyclerView.ViewHolder {
+    private class ImageViewHolder extends MessageViewHolder {
         private ImageView image;
 
         public ImageViewHolder(View itemView) {
             super(itemView);
             image = (ImageView) itemView.findViewById(R.id.message_image);
+        }
+
+        @Override
+        public void init(int position, final Message message) {
+            Picasso.with(MainActivity.this)
+                    .load(new File(message.getText()))
+                    .resize(1080, 0)
+                    .onlyScaleDown()
+                    .into(image);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent();
+                    intent.setAction(Intent.ACTION_VIEW);
+                    intent.setDataAndType(Uri.parse("file://" + message.getText()), "image/*");
+                    startActivity(intent);
+                }
+            });
         }
     }
 }

@@ -7,7 +7,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.transition.Fade;
 import android.transition.Transition;
-import android.view.View;
 
 public abstract class BaseActivity extends AppCompatActivity {
     @Override
@@ -21,9 +20,8 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Transition fade = new Fade();
-            final View decor = getWindow().getDecorView();
             fade.excludeTarget(android.R.id.statusBarBackground, true);
-            fade.excludeTarget(decor, true);
+            fade.excludeTarget(android.R.id.navigationBarBackground, true);
             getWindow().setExitTransition(fade);
             getWindow().setEnterTransition(fade);
         }

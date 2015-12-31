@@ -22,4 +22,6 @@
     <string name="pref_tap_to_sync">Tap to Sync</string>
     <string name="pref_tap_to_sync_summ">Tap two phones together to sync messages</string>
     <string name="intro">Intro</string>
+    <string name="no_password">Skip</string>
+    <string name="no_messages">No messages to show.</string>
 </resources>
