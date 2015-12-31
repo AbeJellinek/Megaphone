@@ -53,6 +53,19 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
         realm = Realm.getDefaultInstance();
         messages = realm.allObjectsSorted(Message.class, "date", false);
 
+        initUI();
+        initNFC();
+    }
+
+    private void initNFC() {
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (nfcAdapter != null && PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean("pref_tap_to_sync", true)) {
+            nfcAdapter.setNdefPushMessageCallback(this, this);
+        }
+    }
+
+    private void initUI() {
         final FloatingActionMenu fam = (FloatingActionMenu) findViewById(R.id.fam);
         FloatingActionButton textFab = (FloatingActionButton) findViewById(R.id.add_text_fab);
         FloatingActionButton imageFab = (FloatingActionButton) findViewById(R.id.add_image_fab);
@@ -96,12 +109,6 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                 startActivityForResult(photoPickerIntent, SELECT_PHOTO);
             }
         });
-
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        if (nfcAdapter != null && PreferenceManager.getDefaultSharedPreferences(this)
-                .getBoolean("pref_tap_to_sync", true)) {
-            nfcAdapter.setNdefPushMessageCallback(this, this);
-        }
     }
 
     @Override

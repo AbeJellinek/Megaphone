@@ -43,6 +43,8 @@
         <activity
                 android:name=".SettingsActivity"
                 android:label="@string/action_settings"/>
+        <activity android:name=".Intro"
+                  android:label="@string/intro"/>
     </application>
 
 </manifest>
