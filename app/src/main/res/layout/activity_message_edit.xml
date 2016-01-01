@@ -53,10 +53,13 @@
                                 android:layout_height="match_parent">
 
                         <EditText android:id="@+id/message_text"
+                                  android:gravity="top"
                                   android:textSize="18sp"
                                   android:layout_width="match_parent"
                                   android:layout_height="wrap_content"
-                                  android:inputType="textCapSentences|textAutoCorrect"/>
+                                  android:isScrollContainer="true"
+                                  android:minHeight="120dp"
+                                  android:inputType="textCapSentences|textAutoCorrect|textMultiLine"/>
 
                     </ScrollView>
 

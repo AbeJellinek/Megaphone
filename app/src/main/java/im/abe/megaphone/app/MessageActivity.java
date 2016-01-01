@@ -3,6 +3,7 @@ package im.abe.megaphone.app;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewCompat;
+import android.text.format.DateUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
@@ -33,6 +34,8 @@ public class MessageActivity extends BaseActivity {
 
         ((TextView) findViewById(R.id.message_title)).setText(message.getTitle());
         ((TextView) findViewById(R.id.message_text)).setText(message.getText());
+        ((TextView) findViewById(R.id.message_time)).setText(
+                DateUtils.getRelativeTimeSpanString(message.getDate().getTime()));
     }
 
     @Override

@@ -48,7 +48,9 @@
                               android:paddingBottom="16dp"/>
 
                     <ScrollView android:layout_width="match_parent"
-                                android:layout_height="match_parent">
+                                android:layout_height="0dp"
+                                android:layout_weight="1"
+                                android:paddingBottom="4dp">
 
                         <TextView android:id="@+id/message_text"
                                   android:textSize="14sp"
@@ -57,6 +59,13 @@
                                   android:textIsSelectable="true"/>
 
                     </ScrollView>
+
+                    <TextView android:id="@+id/message_time"
+                              android:textSize="14sp"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:textColor="@android:color/darker_gray"
+                              android:textIsSelectable="true"/>
 
                 </LinearLayout>
 
