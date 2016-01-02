@@ -19,14 +19,12 @@
     <string name="enter_password">Enter Password</string>
     <string name="choose_password">Choose Password</string>
     <string name="lock">Lock</string>
-    <string name="pref_tap_to_sync">Tap to Sync</string>
-    <string name="pref_tap_to_sync_summ">Tap two phones together to sync messages</string>
     <string name="intro">Intro</string>
     <string name="no_password">Skip</string>
     <string name="no_messages">No messages to show.</string>
     <string name="action_sync">Sync</string>
     <string name="connect_to">Connect to %s?</string>
-    <string name="syncing_dialog">Syncing...</string>
+    <string name="syncing_dialog">Syncing…</string>
     <string name="please_wait">Please wait.</string>
-    <string name="pref_enable_bluetooth">Enable Bluetooth</string>
+    <string name="pref_enable_bluetooth">Enable Bluetooth Sync</string>
 </resources>
