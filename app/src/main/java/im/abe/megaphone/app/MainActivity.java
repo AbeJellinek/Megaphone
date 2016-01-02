@@ -10,6 +10,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -50,6 +51,7 @@ public class MainActivity extends BaseActivity {
     private BluetoothAdapter bluetooth;
     private MaterialDialog btDialog;
     private MaterialDialog syncingDialog;
+    private boolean enableBluetooth = false;
 
     @Override
     protected int getMainView() {
@@ -66,12 +68,17 @@ public class MainActivity extends BaseActivity {
         messages = realm.where(Message.class).findAllSortedAsync("date", false);
 
         initUI();
-        initBluetooth();
+
+        if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean("pref_enable_bluetooth", true)) {
+            enableBluetooth = true;
+            initBluetooth();
+        }
     }
 
     private void initBluetooth() {
         bluetooth = BluetoothAdapter.getDefaultAdapter();
         if (bluetooth == null) {
+            enableBluetooth = false;
             return; // Device does not support Bluetooth
         }
 
@@ -166,12 +173,23 @@ public class MainActivity extends BaseActivity {
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        menu.findItem(R.id.action_sync).setVisible(enableBluetooth = PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean("pref_enable_bluetooth", true));
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
         if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
         } else if (id == R.id.action_sync) {
+            if (!enableBluetooth) {
+                return false;
+            }
+
             final AcceptThread accepter = new AcceptThread();
             accepter.start();
 
