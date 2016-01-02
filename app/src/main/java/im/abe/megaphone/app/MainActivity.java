@@ -288,6 +288,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                 .title(R.string.syncing_dialog)
                 .content(R.string.please_wait)
                 .progress(true, 0)
+                .cancelable(false)
                 .show();
     }
 
