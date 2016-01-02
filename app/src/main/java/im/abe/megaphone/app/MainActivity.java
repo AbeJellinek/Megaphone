@@ -8,13 +8,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.nfc.NdefMessage;
-import android.nfc.NdefRecord;
-import android.nfc.NfcAdapter;
-import android.nfc.NfcEvent;
 import android.os.Bundle;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -37,10 +32,11 @@ import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
-public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefMessageCallback {
+public class MainActivity extends BaseActivity {
 
     public static final String HANDSHAKE_MESSAGE = "HEY, THIS IS MEGAPHONE";
     private static final int REQUEST_SELECT_PHOTO = 100;
@@ -48,49 +44,12 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
     private static final String NAME = "MegaphoneApp";
     private static final UUID SERVICE_UUID = UUID.fromString("5e20de22-44e0-4be1-a027-1795fc55ee3f");
     private static final String TAG = "MainActivity";
-    private final int scrollOffset = 4;
     private Realm realm;
-    private RecyclerView recyclerView;
     private RealmResults<Message> messages;
     private MessageAdapter adapter;
-    private NfcAdapter nfcAdapter;
     private BluetoothAdapter bluetooth;
     private MaterialDialog btDialog;
     private MaterialDialog syncingDialog;
-
-    public static String normalizeMimeType(String type) {
-        if (type == null) {
-            return null;
-        }
-
-        type = type.trim().toLowerCase(Locale.ROOT);
-
-        final int semicolonIndex = type.indexOf(';');
-        if (semicolonIndex != -1) {
-            type = type.substring(0, semicolonIndex);
-        }
-        return type;
-    }
-
-    public static NdefRecord createMime(String mimeType, byte[] mimeData) {
-        if (mimeType == null) throw new NullPointerException("mimeType is null");
-
-        // We only do basic MIME type validation: trying to follow the
-        // RFCs strictly only ends in tears, since there are lots of MIME
-        // types in common use that are not strictly valid as per RFC rules
-        mimeType = normalizeMimeType(mimeType);
-        if (mimeType.length() == 0) throw new IllegalArgumentException("mimeType is empty");
-        int slashIndex = mimeType.indexOf('/');
-        if (slashIndex == 0) throw new IllegalArgumentException("mimeType must have major type");
-        if (slashIndex == mimeType.length() - 1) {
-            throw new IllegalArgumentException("mimeType must have minor type");
-        }
-        // missing '/' is allowed
-
-        // MIME RFCs suggest ASCII encoding for content-type
-        byte[] typeBytes = mimeType.getBytes(Charset.forName("US-ASCII"));
-        return new NdefRecord(NdefRecord.TNF_MIME_MEDIA, typeBytes, null, mimeData);
-    }
 
     @Override
     protected int getMainView() {
@@ -107,7 +66,6 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
         messages = realm.where(Message.class).findAllSortedAsync("date", false);
 
         initUI();
-        initNFC();
         initBluetooth();
     }
 
@@ -123,37 +81,15 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
         }
     }
 
-    private void initNFC() {
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        if (nfcAdapter != null && PreferenceManager.getDefaultSharedPreferences(this)
-                .getBoolean("pref_tap_to_sync", true)) {
-            nfcAdapter.setNdefPushMessageCallback(this, this);
-        }
-    }
-
     private void initUI() {
         final FloatingActionMenu fam = (FloatingActionMenu) findViewById(R.id.fam);
         FloatingActionButton textFab = (FloatingActionButton) findViewById(R.id.add_text_fab);
         FloatingActionButton imageFab = (FloatingActionButton) findViewById(R.id.add_image_fab);
-        recyclerView = (RecyclerView) findViewById(R.id.main_list);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.main_list);
         adapter = new MessageAdapter();
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
-
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                if (Math.abs(dy) > scrollOffset) {
-                    if (dy > 0) {
-                        fam.hideMenu(true);
-                    } else {
-                        fam.showMenu(true);
-                    }
-                }
-            }
-        });
 
         textFab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -304,15 +240,6 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
         realm.close();
     }
 
-    @Override
-    public NdefMessage createNdefMessage(NfcEvent event) {
-        String text = ("This is a test: " + System.currentTimeMillis());
-        return new NdefMessage(
-                new NdefRecord[]{createMime(
-                        "text/plain", text.getBytes())
-                });
-    }
-
     private Message readMessage(DataInputStream dataIn) throws IOException {
         Message message = new Message();
 
@@ -324,8 +251,12 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
             message.setImage(true);
 
             String filename = dataIn.readUTF();
-            byte[] file = new byte[dataIn.readInt()];
-            dataIn.readFully(file);
+            int totalSize = dataIn.readInt();
+            byte[] gzipFile = new byte[dataIn.readInt()];
+            dataIn.readFully(gzipFile);
+
+            byte[] file = new byte[totalSize];
+            new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(gzipFile))).readFully(file);
 
             File dir = new File(Environment.getExternalStorageDirectory(), "Megaphone/downloaded/");
             if (!dir.isDirectory())
@@ -376,14 +307,19 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
             File file = new File(message.getText());
             InputStream fileIn = new FileInputStream(file);
             ByteArrayOutputStream fileOut = new ByteArrayOutputStream();
+            GZIPOutputStream gzip = new GZIPOutputStream(fileOut);
             byte[] buffer = new byte[1024 * 25];
+            int total = 0;
             int len;
             while ((len = fileIn.read(buffer)) != -1) {
-                fileOut.write(buffer, 0, len);
+                gzip.write(buffer, 0, len);
+                total += len;
             }
+            gzip.close();
             fileIn.close();
 
             dataOut.writeUTF(file.getName());
+            dataOut.writeInt(total);
             dataOut.writeInt(fileOut.size());
             dataOut.write(fileOut.toByteArray());
 
@@ -449,9 +385,10 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                         @Override
                         public boolean onMenuItemClick(MenuItem item) {
                             realm.beginTransaction();
-                            messages.remove(position);
-                            notifyItemRemoved(position);
+                            messages.remove(holder.getAdapterPosition());
                             realm.commitTransaction();
+
+                            notifyItemRemoved(holder.getAdapterPosition());
 
                             return true;
                         }
@@ -652,6 +589,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                         realm.close();
                         syncingDialog.dismiss();
                     } catch (IOException e) {
+                        syncingDialog.dismiss();
                         e.printStackTrace();
                     }
                 }
@@ -668,13 +606,11 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
 
     private class ConnectThread extends Thread {
         private final BluetoothSocket socket;
-        private final BluetoothDevice device;
 
         public ConnectThread(BluetoothDevice device) {
             // Use a temporary object that is later assigned to socket,
             // because socket is final
             BluetoothSocket tmp = null;
-            this.device = device;
 
             // Get a BluetoothSocket to connect with the given BluetoothDevice
             try {
@@ -767,6 +703,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                         realm.close();
                         syncingDialog.dismiss();
                     } catch (IOException e) {
+                        syncingDialog.dismiss();
                         e.printStackTrace();
                     }
                 }
