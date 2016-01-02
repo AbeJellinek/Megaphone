@@ -24,4 +24,6 @@
     <string name="intro">Intro</string>
     <string name="no_password">Skip</string>
     <string name="no_messages">No messages to show.</string>
+    <string name="action_sync">Sync</string>
+    <string name="connect_to">Connect to %s?</string>
 </resources>
