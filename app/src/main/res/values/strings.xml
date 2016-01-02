@@ -26,4 +26,6 @@
     <string name="no_messages">No messages to show.</string>
     <string name="action_sync">Sync</string>
     <string name="connect_to">Connect to %s?</string>
+    <string name="syncing_dialog">Syncing...</string>
+    <string name="please_wait">Please wait.</string>
 </resources>

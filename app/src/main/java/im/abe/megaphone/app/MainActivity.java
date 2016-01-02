@@ -260,6 +260,8 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                                 BluetoothDevice device = ((DeviceName) devicesList.getItem(which).getContent())
                                         .getDevice();
                                 new ConnectThread(device).start();
+
+                                showSyncingDialog();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -279,6 +281,14 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showSyncingDialog() {
+        syncingDialog = new MaterialDialog.Builder(MainActivity.this)
+                .title(R.string.syncing_dialog)
+                .content(R.string.please_wait)
+                .progress(true, 0)
+                .show();
     }
 
     @Override
@@ -554,6 +564,13 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                     if (btDialog != null)
                         btDialog.dismiss();
 
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showSyncingDialog();
+                        }
+                    });
+
                     // Do work to manage the connection (in a separate thread)
                     manageConnectedSocket(socket);
                     try {
@@ -632,6 +649,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                         }
 
                         realm.close();
+                        syncingDialog.dismiss();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -675,6 +693,8 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                 // until it succeeds or throws an exception
                 socket.connect();
             } catch (IOException connectException) {
+                syncingDialog.dismiss();
+
                 // Unable to connect; close the socket and get out
                 connectException.printStackTrace();
                 try {
@@ -744,6 +764,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.CreateNdefM
                         realm.commitTransaction();
 
                         realm.close();
+                        syncingDialog.dismiss();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
