@@ -31,6 +31,6 @@
 
     <string name="aboutLibraries_description_showIcon">true</string>
     <string name="aboutLibraries_description_showVersion">true</string>
-    <string name="aboutLibraries_description_text">MY DESCRIPTION!</string>
+    <string name="aboutLibraries_description_text">Keep in touch, online or offline.</string>
     <string name="about">About</string>
 </resources>
