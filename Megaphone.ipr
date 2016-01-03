@@ -214,8 +214,8 @@
   </component>
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Megaphone.iml" filepath="$PROJECT_DIR$/Megaphone.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Megaphone.iml" filepath="$PROJECT_DIR$/.idea/modules/Megaphone.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" />
     </modules>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_7" assert-keyword="true" jdk-15="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
@@ -243,7 +243,9 @@
         <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.mikepenz/aboutlibraries/5.3.6/res" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES />
+      <SOURCES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.mikepenz/aboutlibraries/5.3.6/bdb597114c7d696532d75755ee7fff42ab9e2f80/aboutlibraries-5.3.6-sources.jar!/" />
+      </SOURCES>
     </library>
     <library name="appcompat-v7-23.1.1">
       <ANNOTATIONS>
@@ -306,7 +308,9 @@
         <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.github.clans/fab/1.6.2/res" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES />
+      <SOURCES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.clans/fab/1.6.2/6ac888b504b5a825169cec885c87bae59f60242e/fab-1.6.2-sources.jar!/" />
+      </SOURCES>
     </library>
     <library name="iconics-core-2.5.3">
       <CLASSES>
@@ -314,7 +318,9 @@
         <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/com.mikepenz/iconics-core/2.5.3/res" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES />
+      <SOURCES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.mikepenz/iconics-core/2.5.3/9138b0ea338e5b748629197a22735afe744068d6/iconics-core-2.5.3-sources.jar!/" />
+      </SOURCES>
     </library>
     <library name="picasso-2.5.2">
       <CLASSES>
@@ -325,14 +331,12 @@
         <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.squareup.picasso/picasso/2.5.2/3f998a26355e4138e3e7a880a5dac57fc4370339/picasso-2.5.2-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="realm-android-0.84.0">
+    <library name="realm-android-0.87.1">
       <CLASSES>
-        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.realm/realm-android/0.84.0/37402d6e63c54a53167dfd3f48902245fff2f8fe/realm-android-0.84.0.jar!/" />
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.realm/realm-android/0.87.1/6d9a1bba4e31252cc8183aa27a32e6edbdacaeb7/realm-android-0.87.1.jar!/" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES>
-        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.realm/realm-android/0.84.0/ab87259db7b52aaa1abc87da6f0705c5c71a4f93/realm-android-0.84.0-sources.jar!/" />
-      </SOURCES>
+      <SOURCES />
     </library>
     <library name="recyclerview-v7-23.1.1">
       <ANNOTATIONS>

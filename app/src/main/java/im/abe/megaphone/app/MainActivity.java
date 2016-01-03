@@ -27,10 +27,7 @@ import com.afollestad.materialdialogs.simplelist.MaterialSimpleListItem;
 import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
 import com.squareup.picasso.Picasso;
-import io.realm.Realm;
-import io.realm.RealmChangeListener;
-import io.realm.RealmConfiguration;
-import io.realm.RealmResults;
+import io.realm.*;
 
 import java.io.*;
 import java.util.*;
@@ -65,7 +62,7 @@ public class MainActivity extends BaseActivity {
         Realm.setDefaultConfiguration(new RealmConfiguration.Builder(this).build());
 
         realm = Realm.getDefaultInstance();
-        messages = realm.where(Message.class).findAllSortedAsync("date", false);
+        messages = realm.where(Message.class).findAllSortedAsync("date", Sort.DESCENDING);
 
         initUI();
 
@@ -139,27 +136,30 @@ public class MainActivity extends BaseActivity {
 
                     Cursor cursor = getContentResolver().query(
                             selectedImage, filePathColumn, null, null, null);
-                    cursor.moveToFirst();
 
-                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                    if (cursor.isAfterLast()) {
+                    if (cursor != null) {
+                        cursor.moveToFirst();
+
+                        int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                        if (cursor.isAfterLast()) {
+                            cursor.close();
+                            break;
+                        }
+
+                        String filePath = cursor.getString(columnIndex);
                         cursor.close();
-                        break;
+
+                        realm.beginTransaction();
+
+                        Message message = realm.createObject(Message.class);
+                        message.setId(UUID.randomUUID().toString());
+                        message.setDate(new Date());
+                        message.setTitle("Image");
+                        message.setText(filePath);
+                        message.setImage(true);
+
+                        realm.commitTransaction();
                     }
-
-                    String filePath = cursor.getString(columnIndex);
-                    cursor.close();
-
-                    realm.beginTransaction();
-
-                    Message message = realm.createObject(Message.class);
-                    message.setId(UUID.randomUUID().toString());
-                    message.setDate(new Date());
-                    message.setTitle("Image");
-                    message.setText(filePath);
-                    message.setImage(true);
-
-                    realm.commitTransaction();
                 }
                 break;
         }
@@ -360,7 +360,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-        public MessageAdapter() {
+        MessageAdapter() {
             registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
                 @Override
                 public void onChanged() {
@@ -440,7 +440,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private abstract class MessageViewHolder extends RecyclerView.ViewHolder {
-        protected MessageViewHolder(View itemView) {
+        MessageViewHolder(View itemView) {
             super(itemView);
         }
 
@@ -450,17 +450,20 @@ public class MainActivity extends BaseActivity {
     private class TextViewHolder extends MessageViewHolder {
         private TextView title;
         private TextView text;
+        private TextView time;
 
-        public TextViewHolder(View itemView) {
+        TextViewHolder(View itemView) {
             super(itemView);
             title = (TextView) itemView.findViewById(R.id.message_title);
             text = (TextView) itemView.findViewById(R.id.message_text);
+            time = (TextView) itemView.findViewById(R.id.message_time);
         }
 
         @Override
         public void init(int position, final Message message) {
             title.setText(message.getTitle());
             text.setText(message.getText());
+            time.setText(DateUtils.getRelativeTimeSpanString(message.getDate().getTime()));
 
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -479,7 +482,7 @@ public class MainActivity extends BaseActivity {
     private class ImageViewHolder extends MessageViewHolder {
         private ImageView image;
 
-        public ImageViewHolder(View itemView) {
+        ImageViewHolder(View itemView) {
             super(itemView);
             image = (ImageView) itemView.findViewById(R.id.message_image);
         }
@@ -507,7 +510,7 @@ public class MainActivity extends BaseActivity {
     private class AcceptThread extends Thread {
         private final BluetoothServerSocket serverSocket;
 
-        public AcceptThread() {
+        AcceptThread() {
             try {
                 serverSocket = bluetooth.listenUsingRfcommWithServiceRecord(NAME, SERVICE_UUID);
             } catch (IOException e) {
@@ -626,7 +629,7 @@ public class MainActivity extends BaseActivity {
         /**
          * Will cancel the listening socket, and cause the thread to finish
          */
-        public void cancel() throws IOException {
+        void cancel() throws IOException {
             serverSocket.close();
         }
     }
@@ -634,7 +637,7 @@ public class MainActivity extends BaseActivity {
     private class ConnectThread extends Thread {
         private final BluetoothSocket socket;
 
-        public ConnectThread(BluetoothDevice device) {
+        ConnectThread(BluetoothDevice device) {
             // Use a temporary object that is later assigned to socket,
             // because socket is final
             BluetoothSocket tmp = null;

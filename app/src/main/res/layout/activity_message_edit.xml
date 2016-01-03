@@ -41,7 +41,7 @@
                         android:orientation="vertical">
 
                     <EditText android:id="@+id/message_title"
-                              android:textSize="24sp"
+                              android:textSize="20sp"
                               android:textColor="@android:color/black"
                               android:layout_width="match_parent"
                               android:layout_height="wrap_content"
