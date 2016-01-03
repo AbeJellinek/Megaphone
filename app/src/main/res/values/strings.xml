@@ -7,7 +7,7 @@
     <string name="title_activity_message_edit">Edit Message</string>
     <string name="done">Done</string>
     <string name="delete">Delete</string>
-    <string name="created_template">Created %s</string>
+    <string name="created_template">%s</string>
     <string name="title_activity_login_register">Megaphone</string>
     <string name="reset">Reset</string>
     <string name="reset_dialog_message">
@@ -27,4 +27,5 @@
     <string name="syncing_dialog">Syncing…</string>
     <string name="please_wait">Please wait.</string>
     <string name="pref_enable_bluetooth">Enable Bluetooth Sync</string>
+    <string name="settings">Settings...</string>
 </resources>

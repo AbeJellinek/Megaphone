@@ -231,6 +231,15 @@ public class MainActivity extends BaseActivity {
                     })
                     .autoDismiss(true)
                     .progress(true, 0)
+                    .neutralText(R.string.settings)
+                    .callback(new MaterialDialog.ButtonCallback() {
+                        @Override
+                        public void onNeutral(MaterialDialog dialog) {
+                            Intent intentOpenBluetoothSettings = new Intent();
+                            intentOpenBluetoothSettings.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
+                            startActivity(intentOpenBluetoothSettings);
+                        }
+                    })
                     .show();
         }
 
