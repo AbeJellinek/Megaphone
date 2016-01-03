@@ -6,4 +6,7 @@
             android:title="@string/pref_enable_bluetooth"
             android:defaultValue="true"/>
 
+    <Preference android:key="pref_about"
+                android:title="@string/about"/>
+
 </PreferenceScreen>
