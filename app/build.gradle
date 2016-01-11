@@ -20,8 +20,8 @@ android {
         applicationId "im.abe.megaphone.app"
         minSdkVersion 14
         targetSdkVersion 21
-        versionCode 96
-        versionName "0.96"
+        versionCode 98
+        versionName "0.98"
     }
     buildTypes {
         release {

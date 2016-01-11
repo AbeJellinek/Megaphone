@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Megafon</string>
+    <string name="about">Hakkında</string>
+    <string name="aboutLibraries_description_text">İletişimde kal, çevrimiçi veya çevrimdışı.</string>
+    <string name="action_settings">Tercihler</string>
+    <string name="action_sync">Senkronize</string>
+    <string name="delete">Silmek</string>
+    <string name="done">Bitti</string>
+    <string name="no_messages">Burada mesaj yok.</string>
+    <string name="please_wait">Lütfen bekleyin.</string>
+    <string name="pref_enable_bluetooth">Bluetooth Senkronizasyon etkinleştirin</string>
+    <string name="settings">Tercihler…</string>
+    <string name="syncing_dialog">Senkronizasyon…</string>
+    <string name="title_activity_message">Mesaj</string>
+    <string name="title_activity_message_edit">Düzenleme Mesajı</string>
+</resources>
