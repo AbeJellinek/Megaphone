@@ -1,9 +1,8 @@
 package im.abe.megaphone.app;
 
+import android.app.DialogFragment;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
-import android.bluetooth.BluetoothSocket;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -13,7 +12,6 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcEvent;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -23,7 +21,6 @@ import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateUtils;
-import android.util.Log;
 import android.view.*;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -35,19 +32,21 @@ import com.github.clans.fab.FloatingActionMenu;
 import com.squareup.picasso.Picasso;
 import io.realm.*;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.*;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
+import java.util.Date;
+import java.util.Set;
+import java.util.UUID;
 
 public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushCompleteCallback {
 
-    private static final String HANDSHAKE_MESSAGE = "HEY, THIS IS MEGAPHONE";
+    static final String HANDSHAKE_MESSAGE = "HEY, THIS IS MEGAPHONE";
     private static final int REQUEST_SELECT_PHOTO = 100;
     private static final int REQUEST_ENABLE_BT = 101;
-    private static final String NAME = "MegaphoneApp";
-    private static final UUID SERVICE_UUID = UUID.fromString("5e20de22-44e0-4be1-a027-1795fc55ee3f");
+    static final String NAME = "MegaphoneApp";
+    static final UUID SERVICE_UUID = UUID.fromString("5e20de22-44e0-4be1-a027-1795fc55ee3f");
     private static final String TAG = "MainActivity";
     private static final String MEGAPHONE_MIME = "application/x-megaphone";
     private Realm realm;
@@ -57,6 +56,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushC
     private MaterialDialog btDialog;
     private MaterialDialog syncingDialog;
     private boolean enableBluetooth = false;
+    private DialogFragment syncDialog;
 
     @Override
     protected int getMainView() {
@@ -244,7 +244,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushC
                 return false;
             }
 
-            final AcceptThread accepter = new AcceptThread();
+            final AcceptThread accepter = new AcceptThread(this);
             accepter.start();
 
             Set<BluetoothDevice> pairedDevices = bluetooth.getBondedDevices();
@@ -267,7 +267,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushC
                                 accepter.cancel();
                                 BluetoothDevice device = ((DeviceName) devicesList.getItem(which).getContent())
                                         .getDevice();
-                                new ConnectThread(device).start();
+                                new ConnectThread(MainActivity.this, device).start();
 
                                 showSyncingDialog();
                             } catch (IOException e) {
@@ -300,7 +300,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushC
         return super.onOptionsItemSelected(item);
     }
 
-    private void showSyncingDialog() {
+    void showSyncingDialog() {
         syncingDialog = new MaterialDialog.Builder(MainActivity.this)
                 .title(R.string.syncing_dialog)
                 .content(R.string.please_wait)
@@ -321,7 +321,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushC
 
     @Override
     public void onNdefPushComplete(NfcEvent event) {
-        new AcceptThread().start();
+        new AcceptThread(this).start();
     }
 
     @Override
@@ -338,7 +338,7 @@ public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushC
             try {
                 if (new String(record.getType(), "US-ASCII").equals(MEGAPHONE_MIME)) {
                     BluetoothDevice device = bluetooth.getRemoteDevice(new String(record.getPayload(), "UTF-8"));
-                    new ConnectThread(device).start();
+                    new ConnectThread(this, device).start();
                     showSyncingDialog();
                     return;
                 }
@@ -354,96 +354,20 @@ public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushC
         realm.close();
     }
 
-    private Message readMessage(DataInputStream dataIn) throws IOException {
-        Message message = new Message();
-
-        message.setId(dataIn.readUTF());
-        message.setDate(new Date(dataIn.readLong()));
-        message.setTitle(dataIn.readUTF());
-
-        if (dataIn.readBoolean()) {
-            message.setImage(true);
-
-            String filename = dataIn.readUTF();
-            int totalSize = dataIn.readInt();
-            byte[] gzipFile = new byte[dataIn.readInt()];
-            dataIn.readFully(gzipFile);
-
-            byte[] file = new byte[totalSize];
-            new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(gzipFile))).readFully(file);
-
-            File dir = new File(Environment.getExternalStorageDirectory(), "Megaphone/downloaded/");
-            if (!dir.isDirectory())
-                //noinspection ResultOfMethodCallIgnored
-                dir.mkdirs();
-            File newFile = new File(dir, filename);
-            int fileIndex = 1;
-            while (newFile.exists())
-                newFile = new File(dir, filename.replaceFirst(
-                        "(\\.[^\\.]+)$", "_ " + fileIndex++ + "$1"));
-
-            OutputStream fileOut = new FileOutputStream(newFile);
-            fileOut.write(file);
-            fileOut.close();
-
-            message.setText(newFile.getAbsolutePath());
-
-            Log.d(TAG, "Read image message " + message.getId() + ".");
-        } else {
-            message.setImage(false);
-            message.setText(dataIn.readUTF());
-
-            Log.d(TAG, "Read text message " + message.getId() + ".");
-        }
-
-        return message;
+    BluetoothAdapter getBluetooth() {
+        return bluetooth;
     }
 
-    private void writeMessageIDs(DataOutputStream dataOut, List<Message> allMessages) throws IOException {
-        dataOut.writeInt(allMessages.size());
-        for (Message message : allMessages) {
-            UUID uuid = UUID.fromString(message.getId());
-            dataOut.writeLong(uuid.getMostSignificantBits());
-            dataOut.writeLong(uuid.getLeastSignificantBits());
-        }
-
-        Log.d(TAG, "Wrote " + allMessages.size() + " message IDs.");
+    DialogFragment getSyncDialog() {
+        return syncDialog;
     }
 
-    private void writeMessage(DataOutputStream dataOut, Message message) throws IOException {
-        dataOut.writeUTF(message.getId());
-        dataOut.writeLong(message.getDate().getTime());
-        dataOut.writeUTF(message.getTitle());
+    MaterialDialog getBluetoothDialog() {
+        return btDialog;
+    }
 
-        if (message.isImage()) {
-            dataOut.writeBoolean(true);
-
-            File file = new File(message.getText());
-            InputStream fileIn = new FileInputStream(file);
-            ByteArrayOutputStream fileOut = new ByteArrayOutputStream();
-            GZIPOutputStream gzip = new GZIPOutputStream(fileOut);
-            byte[] buffer = new byte[1024 * 25];
-            int total = 0;
-            int len;
-            while ((len = fileIn.read(buffer)) != -1) {
-                gzip.write(buffer, 0, len);
-                total += len;
-            }
-            gzip.close();
-            fileIn.close();
-
-            dataOut.writeUTF(file.getName());
-            dataOut.writeInt(total);
-            dataOut.writeInt(fileOut.size());
-            dataOut.write(fileOut.toByteArray());
-
-            Log.d(TAG, "Wrote image message " + message.getId() + ".");
-        } else {
-            dataOut.writeBoolean(false);
-            dataOut.writeUTF(message.getText());
-
-            Log.d(TAG, "Wrote text message " + message.getId() + ".");
-        }
+    RecyclerView.Adapter<RecyclerView.ViewHolder> getAdapter() {
+        return adapter;
     }
 
     private class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -593,244 +517,4 @@ public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushC
         }
     }
 
-    private class AcceptThread extends Thread {
-        private final BluetoothServerSocket serverSocket;
-
-        AcceptThread() {
-            try {
-                serverSocket = bluetooth.listenUsingRfcommWithServiceRecord(NAME, SERVICE_UUID);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public void run() {
-            BluetoothSocket socket;
-            // Keep listening until exception occurs or a socket is returned
-            while (true) {
-                try {
-                    socket = serverSocket.accept();
-                } catch (IOException e) {
-                    break;
-                }
-                // If a connection was accepted
-                if (socket != null) {
-                    if (btDialog != null)
-                        btDialog.dismiss();
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            showSyncingDialog();
-                        }
-                    });
-
-                    // Do work to manage the connection (in a separate thread)
-                    manageConnectedSocket(socket);
-                    try {
-                        serverSocket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    break;
-                }
-            }
-        }
-
-        private void manageConnectedSocket(final BluetoothSocket socket) {
-            new Thread() {
-                private Realm realm;
-
-                @Override
-                public void run() {
-                    try {
-                        realm = Realm.getInstance(MainActivity.this);
-
-                        InputStream in = socket.getInputStream();
-                        OutputStream out = socket.getOutputStream();
-                        DataInputStream dataIn = new DataInputStream(in);
-                        DataOutputStream dataOut = new DataOutputStream(out);
-
-                        dataOut.writeUTF(HANDSHAKE_MESSAGE);
-                        Log.d(TAG, "Wrote handshake.");
-                        if (!dataIn.readUTF().equals(HANDSHAKE_MESSAGE)) {
-                            Log.d(TAG, "Got wrong handshake. Closing...");
-                            socket.close();
-                            return;
-                        }
-                        Log.d(TAG, "Got correct handshake.");
-
-                        List<Message> allMessages = realm.allObjects(Message.class);
-                        writeMessageIDs(dataOut, allMessages);
-
-                        int size = dataIn.readInt();
-                        List<Message> newMessages = new ArrayList<>(size);
-                        for (int i = 0; i < size; i++) {
-                            newMessages.add(readMessage(dataIn));
-                        }
-
-                        realm.beginTransaction();
-                        realm.copyToRealm(newMessages);
-                        realm.commitTransaction();
-
-                        Log.d(TAG, "Updated messages.");
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                adapter.notifyDataSetChanged();
-                            }
-                        });
-
-                        int newIDs = dataIn.readInt();
-                        List<String> ids = new ArrayList<>(newIDs);
-                        for (int i = 0; i < newIDs; i++) {
-                            ids.add(new UUID(dataIn.readLong(), dataIn.readLong()).toString());
-                        }
-                        Log.d(TAG, "Read " + newIDs + " message IDs.");
-
-                        List<Message> newMessagesHere = new ArrayList<>(allMessages);
-                        for (ListIterator<Message> iterator = newMessagesHere.listIterator(); iterator.hasNext(); ) {
-                            Message newMessage = iterator.next();
-                            if (ids.contains(newMessage.getId())) {
-                                iterator.remove();
-                            }
-                        }
-
-                        dataOut.writeInt(newMessagesHere.size());
-                        for (Message message : newMessagesHere) {
-                            writeMessage(dataOut, message);
-                        }
-
-                        realm.close();
-                        syncingDialog.dismiss();
-                    } catch (IOException e) {
-                        syncingDialog.dismiss();
-                        e.printStackTrace();
-                    }
-                }
-            }.start();
-        }
-
-        /**
-         * Will cancel the listening socket, and cause the thread to finish
-         */
-        void cancel() throws IOException {
-            serverSocket.close();
-        }
-    }
-
-    private class ConnectThread extends Thread {
-        private final BluetoothSocket socket;
-
-        ConnectThread(BluetoothDevice device) {
-            // Use a temporary object that is later assigned to socket,
-            // because socket is final
-            BluetoothSocket tmp = null;
-
-            // Get a BluetoothSocket to connect with the given BluetoothDevice
-            try {
-                tmp = device.createRfcommSocketToServiceRecord(SERVICE_UUID);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            socket = tmp;
-        }
-
-        public void run() {
-            // Cancel discovery because it will slow down the connection
-            bluetooth.cancelDiscovery();
-
-            try {
-                // Connect the device through the socket. This will block
-                // until it succeeds or throws an exception
-                socket.connect();
-            } catch (IOException connectException) {
-                syncingDialog.dismiss();
-
-                // Unable to connect; close the socket and get out
-                connectException.printStackTrace();
-                try {
-                    socket.close();
-                } catch (IOException ignored) {
-                }
-                return;
-            }
-
-            // Do work to manage the connection (in a separate thread)
-            manageConnectedSocket(socket);
-        }
-
-        private void manageConnectedSocket(final BluetoothSocket socket) {
-            new Thread() {
-                private Realm realm;
-
-                @Override
-                public void run() {
-                    try {
-                        realm = Realm.getInstance(MainActivity.this);
-
-                        InputStream in = socket.getInputStream();
-                        OutputStream out = socket.getOutputStream();
-                        DataInputStream dataIn = new DataInputStream(in);
-                        DataOutputStream dataOut = new DataOutputStream(out);
-
-                        if (!dataIn.readUTF().equals(HANDSHAKE_MESSAGE)) {
-                            Log.d(TAG, "Got wrong handshake. Closing...");
-                            socket.close();
-                            return;
-                        }
-                        Log.d(TAG, "Got correct handshake.");
-                        dataOut.writeUTF(HANDSHAKE_MESSAGE);
-                        Log.d(TAG, "Wrote handshake.");
-
-                        int newIDs = dataIn.readInt();
-                        List<String> ids = new ArrayList<>(newIDs);
-                        for (int i = 0; i < newIDs; i++) {
-                            ids.add(new UUID(dataIn.readLong(), dataIn.readLong()).toString());
-                        }
-                        Log.d(TAG, "Read " + newIDs + " message IDs.");
-
-                        List<Message> allMessages = realm.allObjects(Message.class);
-                        List<Message> newMessages = new ArrayList<>(allMessages);
-                        for (ListIterator<Message> iterator = newMessages.listIterator(); iterator.hasNext(); ) {
-                            Message newMessage = iterator.next();
-                            if (ids.contains(newMessage.getId())) {
-                                iterator.remove();
-                            }
-                        }
-
-                        dataOut.writeInt(newMessages.size());
-                        for (Message message : newMessages) {
-                            writeMessage(dataOut, message);
-                        }
-
-                        writeMessageIDs(dataOut, allMessages);
-
-                        int size = dataIn.readInt();
-                        List<Message> newMessagesHere = new ArrayList<>(size);
-                        for (int i = 0; i < size; i++) {
-                            newMessagesHere.add(readMessage(dataIn));
-                        }
-                        realm.beginTransaction();
-                        realm.copyToRealm(newMessagesHere);
-                        realm.commitTransaction();
-
-                        realm.close();
-                        syncingDialog.dismiss();
-                    } catch (IOException e) {
-                        syncingDialog.dismiss();
-                        e.printStackTrace();
-                    }
-                }
-            }.start();
-        }
-
-        /**
-         * Will cancel an in-progress connection, and close the socket
-         */
-        public void cancel() throws IOException {
-            socket.close();
-        }
-    }
 }
