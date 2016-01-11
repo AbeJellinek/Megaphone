@@ -14,4 +14,5 @@
     <string name="syncing_dialog">المزامنة…</string>
     <string name="title_activity_message">الرسالة</string>
     <string name="title_activity_message_edit">تحرير رسالة</string>
+    <string name="choose_device">اختيار الأجهزة</string>
 </resources>

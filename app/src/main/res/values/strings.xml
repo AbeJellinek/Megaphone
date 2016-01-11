@@ -17,4 +17,5 @@
     <string name="aboutLibraries_description_showVersion" translatable="false">true</string>
     <string name="aboutLibraries_description_text">Keep in touch, online or offline.</string>
     <string name="about">About</string>
+    <string name="choose_device">Choose Device</string>
 </resources>

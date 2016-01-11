@@ -8,10 +8,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcEvent;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -30,18 +36,20 @@ import com.squareup.picasso.Picasso;
 import io.realm.*;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-public class MainActivity extends BaseActivity {
+public class MainActivity extends BaseActivity implements NfcAdapter.OnNdefPushCompleteCallback {
 
-    public static final String HANDSHAKE_MESSAGE = "HEY, THIS IS MEGAPHONE";
+    private static final String HANDSHAKE_MESSAGE = "HEY, THIS IS MEGAPHONE";
     private static final int REQUEST_SELECT_PHOTO = 100;
     private static final int REQUEST_ENABLE_BT = 101;
     private static final String NAME = "MegaphoneApp";
     private static final UUID SERVICE_UUID = UUID.fromString("5e20de22-44e0-4be1-a027-1795fc55ee3f");
     private static final String TAG = "MainActivity";
+    private static final String MEGAPHONE_MIME = "application/x-megaphone";
     private Realm realm;
     private RealmResults<Message> messages;
     private MessageAdapter adapter;
@@ -74,7 +82,7 @@ public class MainActivity extends BaseActivity {
 
     private void initBluetooth() {
         bluetooth = BluetoothAdapter.getDefaultAdapter();
-        if (bluetooth == null) {
+        if (bluetooth == null || !bluetooth.isEnabled()) {
             enableBluetooth = false;
             return; // Device does not support Bluetooth
         }
@@ -82,6 +90,8 @@ public class MainActivity extends BaseActivity {
         if (!bluetooth.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        } else {
+            initNFC();
         }
     }
 
@@ -129,6 +139,11 @@ public class MainActivity extends BaseActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
+            case REQUEST_ENABLE_BT:
+                if (resultCode == RESULT_OK) {
+                    initNFC();
+                }
+                break;
             case REQUEST_SELECT_PHOTO:
                 if (resultCode == RESULT_OK) {
                     Uri selectedImage = data.getData();
@@ -163,6 +178,45 @@ public class MainActivity extends BaseActivity {
                 }
                 break;
         }
+    }
+
+    private void initNFC() {
+        NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (nfcAdapter == null) return; // NFC not available on this device
+        try {
+            nfcAdapter.setOnNdefPushCompleteCallback(this, this);
+            nfcAdapter.setNdefPushMessage(new NdefMessage(new NdefRecord[]{
+                    NdefRecord.createApplicationRecord("im.abe.megaphone.app"),
+                    createMime(MEGAPHONE_MIME, bluetooth.getAddress().getBytes("UTF-8"))}), this);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Copied from API 16.
+     *
+     * @param mimeType The MIME type.
+     * @param mimeData The data to include in the record.
+     * @return The new record.
+     */
+    private static NdefRecord createMime(String mimeType, byte[] mimeData) {
+        if (mimeType == null) throw new NullPointerException("mimeType is null");
+
+        // We only do basic MIME type validation: trying to follow the
+        // RFCs strictly only ends in tears, since there are lots of MIME
+        // types in common use that are not strictly valid as per RFC rules
+        if (mimeType.length() == 0) throw new IllegalArgumentException("mimeType is empty");
+        int slashIndex = mimeType.indexOf('/');
+        if (slashIndex == 0) throw new IllegalArgumentException("mimeType must have major type");
+        if (slashIndex == mimeType.length() - 1) {
+            throw new IllegalArgumentException("mimeType must have minor type");
+        }
+        // missing '/' is allowed
+
+        // MIME RFCs suggest ASCII encoding for content-type
+        byte[] typeBytes = mimeType.getBytes(Charset.forName("US-ASCII"));
+        return new NdefRecord(NdefRecord.TNF_MIME_MEDIA, typeBytes, null, mimeData);
     }
 
     @Override
@@ -205,7 +259,7 @@ public class MainActivity extends BaseActivity {
             }
 
             btDialog = new MaterialDialog.Builder(this)
-                    .title("Choose Device")
+                    .title(R.string.choose_device)
                     .adapter(devicesList, new MaterialDialog.ListCallback() {
                         @Override
                         public void onSelection(final MaterialDialog dialog, View itemView, int which, CharSequence text) {
@@ -236,7 +290,7 @@ public class MainActivity extends BaseActivity {
                         @Override
                         public void onNeutral(MaterialDialog dialog) {
                             Intent intentOpenBluetoothSettings = new Intent();
-                            intentOpenBluetoothSettings.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
+                            intentOpenBluetoothSettings.setAction(Settings.ACTION_BLUETOOTH_SETTINGS);
                             startActivity(intentOpenBluetoothSettings);
                         }
                     })
@@ -259,6 +313,39 @@ public class MainActivity extends BaseActivity {
     protected void onResume() {
         super.onResume();
         adapter.notifyDataSetChanged();
+
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
+            processIntent(getIntent());
+        }
+    }
+
+    @Override
+    public void onNdefPushComplete(NfcEvent event) {
+        new AcceptThread().start();
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        // onResume gets called after this to handle the intent
+        setIntent(intent);
+    }
+
+    private void processIntent(Intent intent) {
+        Parcelable[] rawMsgs = intent.getParcelableArrayExtra(
+                NfcAdapter.EXTRA_NDEF_MESSAGES);
+        NdefMessage msg = (NdefMessage) rawMsgs[0];
+        for (NdefRecord record : msg.getRecords()) {
+            try {
+                if (new String(record.getType(), "US-ASCII").equals(MEGAPHONE_MIME)) {
+                    BluetoothDevice device = bluetooth.getRemoteDevice(new String(record.getPayload(), "UTF-8"));
+                    new ConnectThread(device).start();
+                    showSyncingDialog();
+                    return;
+                }
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override

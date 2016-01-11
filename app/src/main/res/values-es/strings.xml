@@ -14,4 +14,5 @@
     <string name="syncing_dialog">Sincronizando…</string>
     <string name="title_activity_message">Mensaje</string>
     <string name="title_activity_message_edit">Editar Mensaje</string>
+    <string name="choose_device">Seleccionar Dispositivo</string>
 </resources>
