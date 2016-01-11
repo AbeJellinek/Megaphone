@@ -405,8 +405,7 @@ public class MainActivity extends BaseActivity {
                     MenuInflater inflater = getMenuInflater();
                     inflater.inflate(R.menu.menu_message_context, menu);
                     MenuItem item = menu.findItem(R.id.info_time);
-                    item.setTitle(String.format(String.valueOf(item.getTitle()),
-                            DateUtils.getRelativeTimeSpanString(message.getDate().getTime())));
+                    item.setTitle(DateUtils.getRelativeTimeSpanString(message.getDate().getTime()));
 
                     menu.findItem(R.id.action_delete).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
                         @Override

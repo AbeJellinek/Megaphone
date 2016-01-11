@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">بوق</string>
+    <string name="about">حول</string>
+    <string name="aboutLibraries_description_text">البقاء على اتصال، عبر الإنترنت أو دون اتصال.</string>
+    <string name="action_settings">إعدادات</string>
+    <string name="action_sync">المزامنة</string>
+    <string name="delete">حذف</string>
+    <string name="done">انتهيت</string>
+    <string name="no_messages">لا توجد رسائل لتظهر.</string>
+    <string name="please_wait">أرجو الإنتظار.</string>
+    <string name="pref_enable_bluetooth">تمكين بلوتوث المزامنة</string>
+    <string name="settings">إعدادات…</string>
+    <string name="syncing_dialog">المزامنة…</string>
+    <string name="title_activity_message">الرسالة</string>
+    <string name="title_activity_message_edit">تحرير رسالة</string>
+</resources>

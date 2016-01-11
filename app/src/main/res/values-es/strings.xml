@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Megáfono</string>
+    <string name="about">Sobre</string>
+    <string name="aboutLibraries_description_text">Mantente en contacto, en línea o fuera de línea.</string>
+    <string name="action_settings">Ajustes</string>
+    <string name="action_sync">Sincronizar</string>
+    <string name="delete">Borrar</string>
+    <string name="done">Hecho</string>
+    <string name="no_messages">No hay mensajes para mostrar.</string>
+    <string name="please_wait">Por favor espera.</string>
+    <string name="pref_enable_bluetooth">Activar Bluetooth Sincronización</string>
+    <string name="settings">Ajustes…</string>
+    <string name="syncing_dialog">Sincronizando…</string>
+    <string name="title_activity_message">Mensaje</string>
+    <string name="title_activity_message_edit">Editar Mensaje</string>
+</resources>
