@@ -13,6 +13,6 @@
     <string name="settings">Tercihler…</string>
     <string name="syncing_dialog">Senkronizasyon…</string>
     <string name="title_activity_message">Mesaj</string>
-    <string name="title_activity_message_edit">Düzenleme Mesajı</string>
-    <string name="choose_device">Cihazı Seçin</string>
+    <string name="title_activity_message_edit">Düzenleme mesajı</string>
+    <string name="choose_device">Cihazı seçin</string>
 </resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Мегафон</string>
+    <string name="about">Информация</string>
+    <string name="aboutLibraries_description_text">В курсе, онлайн или оффлайн.</string>
+    <string name="action_settings">Настройки</string>
+    <string name="action_sync">Синхронизировать</string>
+    <string name="choose_device">Выберите устройство</string>
+    <string name="delete">Удалить</string>
+    <string name="done">Готов</string>
+    <string name="no_messages">Нет сообщений чтобы показать.</string>
+    <string name="please_wait">Пожалуйста, подождите.</string>
+    <string name="pref_enable_bluetooth">Включить Bluetooth синхронизация</string>
+    <string name="settings">Настройки</string>
+    <string name="syncing_dialog">Синхронизация…</string>
+    <string name="title_activity_message">Сообщение</string>
+    <string name="title_activity_message_edit">Редактировать сообщение</string>
+</resources>
